@@ -15,6 +15,7 @@ var SpinningWheel = {
     cellHeight: 44,
     friction: 0.003,
     slotData: [],
+    mainElementId: 'sw-wrapper',
 
 
     /**
@@ -66,12 +67,12 @@ var SpinningWheel = {
 
     onOrientationChange: function (e) {
         window.scrollTo(0, 0);
-        this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
+        //this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
         this.calculateSlotsWidth();
     },
     
     onScroll: function (e) {
-        this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
+        //this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
     },
 
     lockScreen: function (e) {
@@ -105,15 +106,17 @@ var SpinningWheel = {
 
     create: function () {
         var i, l, out, ul, div;
-
         this.reset();   // Initialize object variables
-
-        // Create the Spinning Wheel main wrapper
-        div = document.createElement('div');
-        div.id = 'sw-wrapper';
-        div.style.top = window.innerHeight + window.pageYOffset + 'px';     // Place the SW down the actual viewing screen
+        // Find the Spinning Wheel main wrapper
+        div = document.getElementById(this.mainElementId);
+        //div.style.top = window.innerHeight + window.pageYOffset + 'px';     // Place the SW down the actual viewing screen
         div.style.webkitTransitionProperty = '-webkit-transform';
-        div.innerHTML = '<div id="sw-header"><div id="sw-cancel">Cancel</' + 'div><div id="sw-done">Done</' + 'div></' + 'div><div id="sw-slots-wrapper"><div id="sw-slots"></' + 'div></' + 'div><div id="sw-frame"></' + 'div>';
+        div.innerHTML = '<div id="sw-slots-wrapper">'
+                        +    '<div id="sw-slots">'
+                        +    '</div>'
+                        +'</div>'
+                        +'<div id="sw-frame">'
+                        +'</div>';
 
         document.body.appendChild(div);
 
@@ -160,10 +163,6 @@ var SpinningWheel = {
         document.addEventListener('touchmove', this, false);            // Prevent page scrolling
         window.addEventListener('orientationchange', this, true);       // Optimize SW on orientation change
         window.addEventListener('scroll', this, true);              // Reposition SW on page scroll
-
-        // Cancel/Done buttons events
-        document.getElementById('sw-cancel').addEventListener('touchstart', this, false);
-        document.getElementById('sw-done').addEventListener('touchstart', this, false);
 
         // Add scrolling to the slots
         this.swFrame.addEventListener('touchstart', this, false);
