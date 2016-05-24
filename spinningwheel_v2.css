@@ -84,8 +84,8 @@
 }
 
 #sw-frame {
-	position:absolute; z-index:1000;
-	left:0; right:0; bottom:0;
+	position:relative; z-index:1000;
+	top:-215px;
 	height:183px;
 	border-width:16px;
 	-webkit-border-image:url(sw-alpha.png) 16;

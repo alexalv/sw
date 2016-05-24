@@ -121,9 +121,10 @@ var SpinningWheel = {
         document.body.appendChild(div);
 
         this.swWrapper = div; // The SW wrapper
-        this.swSlotWrapper = document.getElementById('sw-slots-wrapper');       // Slots visible area
-        this.swSlots = document.getElementById('sw-slots');                     // Pseudo table element (inner wrapper)
-        this.swFrame = document.getElementById('sw-frame');                     // The scrolling controller
+        console.log(div.childNodes);
+        this.swSlotWrapper = div.childNodes[0];       // Slots visible area
+        this.swSlots = this.swSlotWrapper.childNodes[0];                     // Pseudo table element (inner wrapper)
+        this.swFrame = div.childNodes[1];                     // The scrolling controller
 
         // Create HTML slot elements
         for (l = 0; l < this.slotData.length; l += 1) {
