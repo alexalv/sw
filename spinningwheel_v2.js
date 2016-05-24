@@ -11,20 +11,47 @@
  * 
  */
 
-var SpinningWheel = {
-    cellHeight: 44,
-    friction: 0.003,
-    slotData: [],
-    mainElementId: 'sw-wrapper',
+function SpinningWheel(data, options){
+    
+    var self = this;
+    this.slotData = [];
+    
+    this.defaultOptions = {
+        cellHeight: 44,
+        friction: 0.003,
+        mainElementId: 'sw-wrapper'
+    };
+    
+    self.options = {};
 
 
+    this.init = function() {
+        console.log("CALL INIT");
+
+        for (var optionName in self.defaultOptions) {
+            if (!options[optionName]) {
+                self.options[optionName] = self.defaultOptions[optionName];
+            } else {
+                self.options[optionName] = options[optionName];
+            }
+        }
+        
+        self.reset();
+        
+        data.forEach(function(slotData){
+            self.addSlot(slotData['data'],slotData['position'],slotData['defaultValue']);
+        });   
+        
+        self.create();
+    };
+    
     /**
      *
      * Event handler
      *
      */
 
-    handleEvent: function (e) {
+    this.handleEvent = function (e) {
         if (e.type == 'touchstart') {
             this.lockScreen(e);
             if (e.currentTarget.id == 'sw-cancel' || e.currentTarget.id == 'sw-done') {
@@ -57,7 +84,7 @@ var SpinningWheel = {
         } else if (e.type == 'scroll') {
             this.onScroll(e);
         }
-    },
+    };
 
     /**
      *
@@ -65,20 +92,20 @@ var SpinningWheel = {
      *
      */
 
-    onOrientationChange: function (e) {
+    this.onOrientationChange = function (e) {
         window.scrollTo(0, 0);
         //this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
         this.calculateSlotsWidth();
-    },
+    };
     
-    onScroll: function (e) {
+    this.onScroll = function (e) {
         //this.swWrapper.style.top = window.innerHeight + window.pageYOffset + 'px';
-    },
+    };
 
-    lockScreen: function (e) {
+    this.lockScreen = function (e) {
         e.preventDefault();
         e.stopPropagation();
-    },
+    };
 
     /**
      *
@@ -86,7 +113,7 @@ var SpinningWheel = {
      *
      */
 
-    reset: function () {
+    this.reset = function () {
         this.slotEl = [];
 
         this.activeSlot = null;
@@ -95,20 +122,20 @@ var SpinningWheel = {
         this.swSlotWrapper = undefined;
         this.swSlots = undefined;
         this.swFrame = undefined;
-    },
+    };
 
-    calculateSlotsWidth: function () {
+    this.calculateSlotsWidth = function () {
         var div = this.swSlots.getElementsByTagName('div');
         for (var i = 0; i < div.length; i += 1) {
             this.slotEl[i].slotWidth = div[i].offsetWidth;
         }
-    },
+    };
 
-    create: function () {
+    this.create = function () {
         var i, l, out, ul, div;
         this.reset();   // Initialize object variables
         // Find the Spinning Wheel main wrapper
-        div = document.getElementById(this.mainElementId);
+        div = document.getElementById(this.options.mainElementId);
         //div.style.top = window.innerHeight + window.pageYOffset + 'px';     // Place the SW down the actual viewing screen
         div.style.webkitTransitionProperty = '-webkit-transform';
         div.innerHTML = '<div id="sw-slots-wrapper">'
@@ -167,7 +194,7 @@ var SpinningWheel = {
 
         // Add scrolling to the slots
         this.swFrame.addEventListener('touchstart', this, false);
-    },
+    };
 
     /**
      *
@@ -175,7 +202,7 @@ var SpinningWheel = {
      *
      */
 
-    addSlot: function (values, style, defaultValue) {
+    this.addSlot = function (values, style, defaultValue) {
         if (!style) {
             style = '';
         }
@@ -190,9 +217,9 @@ var SpinningWheel = {
 
         var obj = { 'values': values, 'style': style, 'defaultValue': defaultValue };
         this.slotData.push(obj);
-    },
+    };
 
-    getSelectedValues: function () {
+    this.getSelectedValues = function () {
         var index, count,
             i, l,
             keys = [], values = [];
@@ -208,7 +235,7 @@ var SpinningWheel = {
                 this.setPosition(i, this.slotEl[i].slotMaxScroll);
             }
 
-            index = -Math.round(this.slotEl[i].slotYPosition / this.cellHeight);
+            index = -Math.round(this.slotEl[i].slotYPosition / this.options.cellHeight);
 
             count = 0;
             for (l in this.slotData[i].values) {
@@ -223,7 +250,7 @@ var SpinningWheel = {
         }
 
         return { 'keys': keys, 'values': values };
-    },
+    };
 
 
     /**
@@ -232,12 +259,12 @@ var SpinningWheel = {
      *
      */
 
-    setPosition: function (slot, pos) {
+    this.setPosition = function (slot, pos) {
         this.slotEl[slot].slotYPosition = pos;
         this.slotEl[slot].style.webkitTransform = 'translate3d(0, ' + pos + 'px, 0)';
-    },
+    };
     
-    scrollStart: function (e) {
+    this.scrollStart = function (e) {
         // Find the clicked slot
         var xPos = e.targetTouches[0].clientX - this.swSlots.offsetLeft;    // Clicked position minus left offset (should be 11px)
 
@@ -277,9 +304,9 @@ var SpinningWheel = {
         this.swFrame.addEventListener('touchend', this, false);
         
         return true;
-    },
+    };
 
-    scrollMove: function (e) {
+    this.scrollMove = function (e) {
         var topDelta = e.targetTouches[0].clientY - this.startY;
 
         if (this.slotEl[this.activeSlot].slotYPosition > 0 || this.slotEl[this.activeSlot].slotYPosition < this.slotEl[this.activeSlot].slotMaxScroll) {
@@ -294,9 +321,11 @@ var SpinningWheel = {
             this.scrollStartY = this.slotEl[this.activeSlot].slotYPosition;
             this.scrollStartTime = e.timeStamp;
         }
-    },
+        //this.getElementById('acslot').innerHTML = 'moving';
+        //this.getElementById('newp').innerHTML = 'moving';
+    };
     
-    scrollEnd: function (e) {
+    this.scrollEnd = function (e) {
         this.swFrame.removeEventListener('touchmove', this, false);
         this.swFrame.removeEventListener('touchend', this, false);
 
@@ -310,9 +339,9 @@ var SpinningWheel = {
         var scrollDistance = this.slotEl[this.activeSlot].slotYPosition - this.scrollStartY;
 
         // The drag session was too short
-        if (scrollDistance < this.cellHeight / 1.5 && scrollDistance > -this.cellHeight / 1.5) {
-            if (this.slotEl[this.activeSlot].slotYPosition % this.cellHeight) {
-                this.scrollTo(this.activeSlot, Math.round(this.slotEl[this.activeSlot].slotYPosition / this.cellHeight) * this.cellHeight, '100ms');
+        if (scrollDistance < this.options.cellHeight / 1.5 && scrollDistance > -this.options.cellHeight / 1.5) {
+            if (this.slotEl[this.activeSlot].slotYPosition % this.options.cellHeight) {
+                this.scrollTo(this.activeSlot, Math.round(this.slotEl[this.activeSlot].slotYPosition / this.options.cellHeight) * this.options.cellHeight, '100ms');
             }
 
             return false;
@@ -320,14 +349,14 @@ var SpinningWheel = {
 
         var scrollDuration = e.timeStamp - this.scrollStartTime;
 
-        var newDuration = (2 * scrollDistance / scrollDuration) / this.friction;
-        var newScrollDistance = (this.friction / 2) * (newDuration * newDuration);
+        var newDuration = (2 * scrollDistance / scrollDuration) / this.options.friction;
+        var newScrollDistance = (this.options.friction / 2) * (newDuration * newDuration);
         
         if (newDuration < 0) {
             newDuration = -newDuration;
             newScrollDistance = -newScrollDistance;
         }
-
+        
         var newPosition = this.slotEl[this.activeSlot].slotYPosition + newScrollDistance;
 
         if (newPosition > 0) {
@@ -347,15 +376,14 @@ var SpinningWheel = {
                 newPosition = this.slotEl[this.activeSlot].slotMaxScroll - this.swSlotWrapper.clientHeight / 4;
             }
         } else {
-            newPosition = Math.round(newPosition / this.cellHeight) * this.cellHeight;
+            newPosition = Math.round(newPosition / this.options.cellHeight) * this.options.cellHeight;
         }
 
         this.scrollTo(this.activeSlot, Math.round(newPosition), Math.round(newDuration) + 'ms');
- 
         return true;
-    },
+    };
 
-    scrollTo: function (slotNum, dest, runtime) {
+    this.scrollTo = function (slotNum, dest, runtime) {
         this.slotEl[slotNum].style.webkitTransitionDuration = runtime ? runtime : '100ms';
         this.setPosition(slotNum, dest ? dest : 0);
 
@@ -363,9 +391,9 @@ var SpinningWheel = {
         if (this.slotEl[slotNum].slotYPosition > 0 || this.slotEl[slotNum].slotYPosition < this.slotEl[slotNum].slotMaxScroll) {
             this.slotEl[slotNum].addEventListener('webkitTransitionEnd', this, false);
         }
-    },
+    };
     
-    scrollToValue: function (slot, value) {
+    this.scrollToValue = function (slot, value) {
         var yPos, count, i;
 
         this.slotEl[slot].removeEventListener('webkitTransitionEnd', this, false);
@@ -374,20 +402,22 @@ var SpinningWheel = {
         count = 0;
         for (i in this.slotData[slot].values) {
             if (i == value) {
-                yPos = count * this.cellHeight;
+                yPos = count * this.options.cellHeight;
                 this.setPosition(slot, yPos);
                 break;
             }
             
             count -= 1;
         }
-    },
+    };
     
-    backWithinBoundaries: function (e) {
+    this.backWithinBoundaries = function (e) {
         e.target.removeEventListener('webkitTransitionEnd', this, false);
 
         this.scrollTo(e.target.slotPosition, e.target.slotYPosition > 0 ? 0 : e.target.slotMaxScroll, '150ms');
         return false;
     }
+    
+    this.init();
 
 }
