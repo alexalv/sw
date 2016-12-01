@@ -18,7 +18,8 @@ function SpinningWheel(data, options){
     this.defaultOptions = {
         cellHeight: 44,
         friction: 0.003,
-        mainElementId: 'sw-wrapper'
+        mainElementId: 'sw-wrapper',
+        reformat: false,
     };
     
     self.options = {};
@@ -37,7 +38,7 @@ function SpinningWheel(data, options){
         self.reset();
         
         data.forEach(function(slotData){
-            self.addSlot(slotData['data'],slotData['position'],slotData['defaultValue']);
+            self.addSlot(slotData['data'], slotData['position'], slotData['defaultValue']);
         });   
         
         self.create();
@@ -50,21 +51,21 @@ function SpinningWheel(data, options){
      */
 
     this.handleEvent = function (e) {
-        if (e.type == 'touchstart') {
+        if (e.type == 'touchstart' || e.type == 'mousedown') {
             self.lockScreen(e);
             if (e.currentTarget.id == 'sw-cancel' || e.currentTarget.id == 'sw-done') {
                 self.tapDown(e);
             } else if (e.currentTarget.id == 'sw-frame') {
                 self.scrollStart(e);
             }
-        } else if (e.type == 'touchmove') {
+        } else if (e.type == 'touchmove' || e.type == 'mousemove') {
             self.lockScreen(e);
             if (e.currentTarget.id == 'sw-cancel' || e.currentTarget.id == 'sw-done') {
                 self.tapCancel(e);
             } else if (e.currentTarget.id == 'sw-frame') {
                 self.scrollMove(e);
             }
-        } else if (e.type == 'touchend') {
+        } else if (e.type == 'touchend' || e.type == 'mouseup') {
             if (e.currentTarget.id == 'sw-cancel' || e.currentTarget.id == 'sw-done') {
                 self.tapUp(e);
             } else if (e.currentTarget.id == 'sw-frame') {
@@ -124,7 +125,7 @@ function SpinningWheel(data, options){
     this.calculateSlotsWidth = function () {
         var div = self.swSlots.getElementsByTagName('div');
         for (var i = 0; i < div.length; i += 1) {
-            self.slotEl[i].slotWidth = div[i].offsetWidth;
+            self.slotEl[i].slotWidth = 61;
         }
     };
 
@@ -133,8 +134,6 @@ function SpinningWheel(data, options){
         self.reset();   // Initialize object variables
         // Find the Spinning Wheel main wrapper
         div = document.getElementById(self.options.mainElementId);
-        //div.style.top = window.innerHeight + window.pageYOffset + 'px';     // Place the SW down the actual viewing screen
-        //div.style.webkitTransitionProperty = '-webkit-transform';
         div.innerHTML = '<div id="sw-slots-wrapper">'
                         +    '<div id="sw-slots">'
                         +    '</div>'
@@ -142,7 +141,6 @@ function SpinningWheel(data, options){
                         +'<div id="sw-frame">'
                         +'</div>';
 
-        //document.body.appendChild(div);
 
         self.swWrapper = div; // The SW wrapper
         self.swSlotWrapper = div.childNodes[0];       // Slots visible area
@@ -155,7 +153,15 @@ function SpinningWheel(data, options){
             ul = document.createElement('ul');
             out = '';
             for (i in self.slotData[l].values) {
-                out += '<li>' + self.slotData[l].values[i] + '<' + '/li>';
+                var value_to_show = self.slotData[l].values[i].name;
+                if (self.options.reformat){
+                    if (self.slotData[l].values[i].name >= 0){
+                        value_to_show = '+' + numeral(self.slotData[l].values[i].name).format('0.00') 
+                    }else{
+                        value_to_show = numeral(self.slotData[l].values[i].name).format('0.00')
+                    }
+                }
+                out += '<li>' + value_to_show + '<' + '/li>';
             }
             ul.innerHTML = out;
 
@@ -169,7 +175,7 @@ function SpinningWheel(data, options){
             ul.slotPosition = l;            // Save the slot position inside the wrapper
             ul.slotYPosition = 0;
             ul.slotWidth = 0;
-            ul.slotMaxScroll = self.swSlotWrapper.clientHeight - ul.clientHeight - 86;
+            ul.slotMaxScroll = - ((Object.keys(self.slotData[l].values).length - 1) * self.options.cellHeight);//self.swSlotWrapper.clientHeight - ul.clientHeight - 86;
             ul.style.webkitTransitionTimingFunction = 'cubic-bezier(0, 0, 0.2, 1)';     // Add default transition
             
             self.slotEl.push(ul);           // Save the slot for later use
@@ -182,14 +188,8 @@ function SpinningWheel(data, options){
         
         self.calculateSlotsWidth();
         
-        // Global events
-        //document.addEventListener('touchstart', self, false);           // Prevent page scrolling
-        //document.addEventListener('touchmove', self, false);            // Prevent page scrolling
-        //window.addEventListener('orientationchange', self, true);       // Optimize SW on orientation change
-        //window.addEventListener('scroll', self, true);              // Reposition SW on page scroll
-
-        // Add scrolling to the slots
         self.swFrame.addEventListener('touchstart', self, false);
+        self.swFrame.addEventListener('mousedown', self, false);
     };
 
     /**
@@ -211,7 +211,11 @@ function SpinningWheel(data, options){
         
         style = style.join(' ');
 
-        var obj = { 'values': values, 'style': style, 'defaultValue': defaultValue };
+        var obj = {
+            'values': values,
+            'style': style,
+            'defaultValue': defaultValue,
+        };
         self.slotData.push(obj);
     };
 
@@ -262,7 +266,11 @@ function SpinningWheel(data, options){
     
     this.scrollStart = function (e) {
         // Find the clicked slot
-        var xPos = e.targetTouches[0].clientX //- self.swSlots.offsetLeft;    // Clicked position minus left offset (should be 11px)
+        if (e.targetTouches){
+            var xPos = e.targetTouches[0].clientX //- self.swSlots.offsetLeft;    // Clicked position minus left offset (should be 11px)
+        }else{
+            var xPos = e.clientX
+        }
 
         // Find tapped slot
         var slot = 0;
@@ -271,9 +279,10 @@ function SpinningWheel(data, options){
             slot += el.offsetLeft;
             el = el.offsetParent;
         }
+        
+        
         for (var i = 0; i < self.slotEl.length; i += 1) {
             slot += self.slotEl[i].slotWidth;
-            
             if (xPos < slot) {
                 self.activeSlot = i;
                 break;
@@ -284,6 +293,8 @@ function SpinningWheel(data, options){
         if (self.slotData[self.activeSlot].style.match('readonly')) {
             self.swFrame.removeEventListener('touchmove', self, false);
             self.swFrame.removeEventListener('touchend', self, false);
+            self.swFrame.removeEventListener('mousemove', self, false);
+            self.swFrame.removeEventListener('mouseup', self, false);
             return false;
         }
 
@@ -296,26 +307,39 @@ function SpinningWheel(data, options){
         if (theTransform != self.slotEl[self.activeSlot].slotYPosition) {
             self.setPosition(self.activeSlot, theTransform);
         }
+        if (e.targetTouches){
+            self.startY = e.targetTouches[0].clientY;
+        }else{
+            self.startY = e.clientY;
+        }
         
-        self.startY = e.targetTouches[0].clientY;
         self.scrollStartY = self.slotEl[self.activeSlot].slotYPosition;
         self.scrollStartTime = e.timeStamp;
 
         self.swFrame.addEventListener('touchmove', self, false);
         self.swFrame.addEventListener('touchend', self, false);
-        
+        self.swFrame.addEventListener('mousemove', self, false);
+        self.swFrame.addEventListener('mouseup', self, false);
         return true;
     };
 
     this.scrollMove = function (e) {
-        var topDelta = e.targetTouches[0].clientY - self.startY;
+        if (e.targetTouches){
+            var topDelta = e.targetTouches[0].clientY - self.startY;
+        }else{
+            var topDelta = e.clientY - self.startY;
+        }
 
         if (self.slotEl[self.activeSlot].slotYPosition > 0 || self.slotEl[self.activeSlot].slotYPosition < self.slotEl[self.activeSlot].slotMaxScroll) {
             topDelta /= 2;
         }
         
         self.setPosition(self.activeSlot, self.slotEl[self.activeSlot].slotYPosition + topDelta);
-        self.startY = e.targetTouches[0].clientY;
+        if (e.targetTouches){
+            self.startY = e.targetTouches[0].clientY;
+        }else{
+            self.startY = e.clientY;
+        }
 
         // Prevent slingshot effect
         if (e.timeStamp - self.scrollStartTime > 80) {
@@ -326,25 +350,34 @@ function SpinningWheel(data, options){
         //self.getElementById('newp').innerHTML = 'moving';
     };
     
+    this.afterScroll = function(){
+        return true;
+    },
+    
     this.scrollEnd = function (e) {
         self.swFrame.removeEventListener('touchmove', self, false);
         self.swFrame.removeEventListener('touchend', self, false);
+        self.swFrame.removeEventListener('mousemove', self, false);
+        self.swFrame.removeEventListener('mouseup', self, false);
 
         // If we are outside of the boundaries, let's go back to the sheepfold
+        
         if (self.slotEl[self.activeSlot].slotYPosition > 0 || self.slotEl[self.activeSlot].slotYPosition < self.slotEl[self.activeSlot].slotMaxScroll) {
             self.scrollTo(self.activeSlot, self.slotEl[self.activeSlot].slotYPosition > 0 ? 0 : self.slotEl[self.activeSlot].slotMaxScroll);
+            self.afterScroll();
             return false;
         }
 
         // Lame formula to calculate a fake deceleration
         var scrollDistance = self.slotEl[self.activeSlot].slotYPosition - self.scrollStartY;
+        
 
         // The drag session was too short
         if (scrollDistance < self.options.cellHeight / 1.5 && scrollDistance > -self.options.cellHeight / 1.5) {
             if (self.slotEl[self.activeSlot].slotYPosition % self.options.cellHeight) {
                 self.scrollTo(self.activeSlot, Math.round(self.slotEl[self.activeSlot].slotYPosition / self.options.cellHeight) * self.options.cellHeight, '100ms');
             }
-
+            self.afterScroll();
             return false;
         }
 
@@ -379,8 +412,8 @@ function SpinningWheel(data, options){
         } else {
             newPosition = Math.round(newPosition / self.options.cellHeight) * self.options.cellHeight;
         }
-
         self.scrollTo(self.activeSlot, Math.round(newPosition), Math.round(newDuration) + 'ms');
+        self.afterScroll();
         return true;
     };
 
@@ -402,7 +435,25 @@ function SpinningWheel(data, options){
         
         count = 0;
         for (i in self.slotData[slot].values) {
-            if (i == value) {
+            if (self.slotData[slot].values[i].id === value.values[0].id) {
+                yPos = count * self.options.cellHeight;
+                self.setPosition(slot, yPos);
+                break;
+            }
+            
+            count -= 1;
+        }
+    };
+    
+    this.scrollToId = function (slot, id) {
+        var yPos, count, i;
+
+        self.slotEl[slot].removeEventListener('webkitTransitionEnd', self, false);
+        self.slotEl[slot].style.webkitTransitionDuration = '0';
+        
+        count = 0;
+        for (i in self.slotData[slot].values) {
+            if (self.slotData[slot].values[i].id === id) {
                 yPos = count * self.options.cellHeight;
                 self.setPosition(slot, yPos);
                 break;
